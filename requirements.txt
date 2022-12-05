@@ -1,0 +1,5 @@
+pip install bs4
+pip install Scrapy
+pip install formulas
+pip install keepa
+pip install pandas
