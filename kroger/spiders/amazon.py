@@ -5,7 +5,7 @@ import scrapy
 
 # API = ''  ##Insert Scraperapi API key here. Signup here for free trial with 5,000 requests: https://www.scraperapi.com/signup
 ##Insert Scraperapi API key here. Signup here for free trial with 10,000 requests: https://app.scrapingant.com/signup
-API = #'69b042b0a8904084ab2ff389fb8b5010' expired for jan 2023
+API = '69b042b0a8904084ab2ff389fb8b5010' #expired for jan 2023
 
 AMAZON_URL = 'https://www.amazon.com/'
 SCRAPINGANT_URL = 'http://api.scrapingant.com/v2/general?'
