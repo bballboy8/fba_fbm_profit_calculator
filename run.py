@@ -2,9 +2,10 @@ import json
 
 import pandas as pd
 from scrapy.crawler import CrawlerProcess
-from kroger.spiders.kroger import KrogerSpider
-from kroger.spiders.amazon import AmazonSpider
+
 from amazon_keepa import keepa_scripts
+from kroger.spiders.amazon import AmazonSpider
+from kroger.spiders.kroger import KrogerSpider
 
 kroger_data_path = "output/kroger.csv"
 amazon_data_path = "output/amazon.csv"
@@ -22,7 +23,7 @@ def create_product_list(input_file_path):
     df['final_product_name'] = df['final_product_name'].str.replace("pk", "")
     df['final_product_name'] = df['final_product_name'].str.replace("yd", "")
     product_name_list = list(set(df["product_name"]))
-    return product_name_list
+    return product_name_list[:100]
 
 
 def create_profit_report():
@@ -49,9 +50,10 @@ def create_profit_report():
                     #                                "referral_fee": fba["referral_fee"],
                     #                                "storage_fee": fba["storage_fee"],
                     #                                "small_and_light": fba["small_and_light"]}})
-                    if not fbm["fbm_profit"] < 0 and not fba["fba_profit"] < 0:
-                        keep_data_list.append(
-                            {"asin": asin, "fbm_profit": fbm["fbm_profit"], "fba_profit": fba["fba_profit"]})
+                    if fbm and fba:
+                        if not fbm["fbm_profit"] < 0 and not fba["fba_profit"] < 0:
+                            keep_data_list.append(
+                                {"asin": asin, "fbm_profit": fbm["fbm_profit"], "fba_profit": fba["fba_profit"]})
     keep_data_df = pd.DataFrame(keep_data_list)
     final_df = pd.merge(combined_df, keep_data_df, on='asin')
     final_df.to_csv(final_profit_data_path, index=False)
@@ -67,11 +69,11 @@ if __name__ == '__main__':
 
     # to start the amazon scrapping
     queries = create_product_list(kroger_data_path)
-    process = CrawlerProcess(
+    amazon_process = CrawlerProcess(
         {'FEED_FORMAT': 'csv',
          'FEED_URI': amazon_data_path})
-    process.crawl(AmazonSpider, queries=queries)
-    process.start()
+    amazon_process.crawl(AmazonSpider, queries=queries)
+    amazon_process.start()
 
     # to create the final profit products data
     create_profit_report()

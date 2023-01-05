@@ -1,6 +1,8 @@
 from datetime import datetime
-import keepa as keepa
 from importlib import import_module
+
+import keepa as keepa
+
 from amazon_keepa.constants import constant_values
 
 ACCESS_KEY = "8uo78hvu8m0i4con694ij5g0jbi7kcck6hrmmh8dr4o61o38t0c1l4c3ppm90kn7"
@@ -186,60 +188,64 @@ def search_product(query: str, purchase_price: float, seller_unit: str):
     api = keepa.Keepa(ACCESS_KEY)
     products = api.query(query, stats=180)
     interesting_products = [product for product in products if 0 < product["stats"]["salesRankDrops180"] >= 1]
-    length = interesting_products[0]["packageLength"]
-    width = interesting_products[0]["packageWidth"]
-    height = interesting_products[0]["packageHeight"]
-    weight = interesting_products[0]["packageWeight"]
-    try:
-        list_price = interesting_products[0]["stats_parsed"]["current"]["AMAZON"]
-    except:
-        list_price = interesting_products[0]["stats_parsed"]["current"]["NEW"]
-    quantity = interesting_products[0]["numberOfItems"]
-    if quantity in [-1]:
-        quantity = 1
-    if "pk" in seller_unit or "ct" in seller_unit or "oz" in seller_unit:
-        seller_unit = float(seller_unit.split(" ")[0])
-        quantity = quantity / seller_unit
-    category = interesting_products[0]["categories"][0]
-    purchase_price = quantity * float(str(purchase_price).replace("$", ""))
-    storage_months = 6
-    bubble_wrapping = True
-    plastic_bag = False
-    cons = quantity
-    fbm_profit, shipping_cost, packing_materials, labor, ref_fee, purchase_price = fbm(
-        get_weight(weight),
-        get_dimension(length),
-        get_dimension(width),
-        get_dimension(height),
-        cons,
-        constant_values,
-        category,
-        purchase_price,
-        list_price)
+    fbm_parameters, fba_parameters = None, None
+    if interesting_products:
+        length = interesting_products[0]["packageLength"]
+        width = interesting_products[0]["packageWidth"]
+        height = interesting_products[0]["packageHeight"]
+        weight = interesting_products[0]["packageWeight"]
+        try:
+            list_price = interesting_products[0]["stats_parsed"]["current"]["AMAZON"]
+        except:
+            list_price = interesting_products[0]["stats_parsed"]["current"]["NEW"]
+        quantity = interesting_products[0]["numberOfItems"]
+        if quantity in [-1]:
+            quantity = 1
+        if "pk" in seller_unit or "ct" in seller_unit or "oz" in seller_unit:
+            seller_unit = float(seller_unit.split(" ")[0])
+            quantity = quantity / seller_unit
+        category = interesting_products[0]["categories"][0]
+        purchase_price = quantity * float(str(purchase_price).replace("$", ""))
+        storage_months = 6
+        bubble_wrapping = True
+        plastic_bag = False
+        cons = quantity
+        fbm_profit, shipping_cost, packing_materials, labor, ref_fee, purchase_price = fbm(
+            get_weight(weight),
+            get_dimension(length),
+            get_dimension(width),
+            get_dimension(height),
+            cons,
+            constant_values,
+            category,
+            purchase_price,
+            list_price)
 
-    fbm_parameters = {"fbm_profit": fbm_profit, "shipping_cost": shipping_cost,
-                      "packing_materials": packing_materials, "labor": labor,
-                      "referral_fee": ref_fee, "purchase_price": purchase_price}
-    print(fbm_parameters)
+        fbm_parameters = {"fbm_profit": fbm_profit, "shipping_cost": shipping_cost,
+                          "packing_materials": packing_materials, "labor": labor,
+                          "referral_fee": ref_fee, "purchase_price": purchase_price}
+        print(fbm_parameters)
 
-    fba_profit, shipping_cost, packing_materials, labor, ref_fee, storage_fee, small_and_light, purchase_price = fba(
-        storage_months,
-        get_weight(weight),
-        get_dimension(length),
-        get_dimension(width),
-        get_dimension(height),
-        constant_values,
-        category,
-        purchase_price,
-        list_price,
-        requires_multipack(quantity),
-        bubble_wrapping,
-        plastic_bag)
+        fba_profit, shipping_cost, packing_materials, labor, ref_fee, storage_fee, small_and_light, purchase_price = fba(
+            storage_months,
+            get_weight(weight),
+            get_dimension(length),
+            get_dimension(width),
+            get_dimension(height),
+            constant_values,
+            category,
+            purchase_price,
+            list_price,
+            requires_multipack(quantity),
+            bubble_wrapping,
+            plastic_bag)
 
-    fba_parameters = {"fba_profit": fba_profit, "shipping_cost": shipping_cost,
-                      "packing_materials": packing_materials, "labor": labor,
-                      "referral_fee": ref_fee,
-                      "storage_fee": storage_fee, "small_and_light": small_and_light,
-                      "purchase_price": purchase_price}
-    print(fba_parameters)
+        fba_parameters = {"fba_profit": fba_profit, "shipping_cost": shipping_cost,
+                          "packing_materials": packing_materials, "labor": labor,
+                          "referral_fee": ref_fee,
+                          "storage_fee": storage_fee, "small_and_light": small_and_light,
+                          "purchase_price": purchase_price}
+        print(fba_parameters)
+    else:
+        print(f"Interesting Product not found!")
     return query, fbm_parameters, fba_parameters
