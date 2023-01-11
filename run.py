@@ -6,10 +6,11 @@ from scrapy.crawler import CrawlerProcess
 from amazon_keepa import keepa_scripts
 from kroger.spiders.amazon import AmazonSpider
 from kroger.spiders.kroger import KrogerSpider
+from multiprocessing import Process
 
-kroger_data_path = "output/kroger.csv"
-amazon_data_path = "output/amazon.csv"
-final_profit_data_path = "output/final.csv"
+kroger_data_path = "test/kroger.csv"
+amazon_data_path = "test/amazon_test.csv"
+final_profit_data_path = "test/final.csv"
 
 
 def create_product_list(input_file_path):
@@ -59,21 +60,34 @@ def create_profit_report():
     final_df.to_csv(final_profit_data_path, index=False)
 
 
-if __name__ == '__main__':
-    # to start the kroger scrapping
+def execute_kroger_crawling():
     process = CrawlerProcess({
         'FEED_FORMAT': 'csv',
         'FEED_URI': kroger_data_path})
     process.crawl(KrogerSpider)
     process.start()
 
-    # to start the amazon scrapping
+    # process = CrawlerProcess(get_project_settings())#same way can be done for Crawlrunner
+    # dispatcher.connect(set_result, signals.item_scraped)
+    # process.crawl('my_spider')
+    # process.start()
+
+def execute_amazon_crawling():
     queries = create_product_list(kroger_data_path)
     amazon_process = CrawlerProcess(
         {'FEED_FORMAT': 'csv',
          'FEED_URI': amazon_data_path})
     amazon_process.crawl(AmazonSpider, queries=queries)
     amazon_process.start()
+
+if __name__ == '__main__':
+    p = Process(target=execute_kroger_crawling)
+    p.start()
+    p.join()
+
+    p = Process(target=execute_amazon_crawling)
+    p.start()
+    p.join()
 
     # to create the final profit products data
     create_profit_report()
